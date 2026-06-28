@@ -54,7 +54,7 @@ body {
 .bg-orbs {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
   overflow: hidden;
 }
@@ -189,7 +189,6 @@ body {
 /* ── レイアウト ─────────────────────────────────────────────────── */
 .layout {
   position: relative;
-  z-index: 1;
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
   min-height: 100vh;
