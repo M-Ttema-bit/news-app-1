@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NewsAnalyzer — AIニュース分析ダッシュボード</title>
+  <meta name="description" content="Yahoo!ニュースをGemini AIで自動分析。要約・考察・ラジオ台本をリアルタイム生成。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- サイドバーオーバーレイ（モバイル） -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ── ヘッダー ── -->
+  <header class="header">
+    <div class="header-inner">
+      <button class="hamburger" id="hamburger" aria-label="メニューを開く" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="logo">
+        <div class="logo-badge">⚡</div>
+        <div>
+          <div class="logo-name">NewsAnalyzer</div>
+          <div class="logo-sub">Powered by Gemini AI</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-badge">BETA</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── メインレイアウト ── -->
+  <div class="layout">
+
+    <!-- ── サイドバー ── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header-mobile">
+        <span class="sidebar-title-mobile">⚙️ 設定</span>
+        <button class="sidebar-close" id="sidebarClose" aria-label="閉じる">✕</button>
+      </div>
+
+      <h2 class="sidebar-title">⚙️ 設定</h2>
+
+      <!-- フィード選択 -->
+      <div class="setting-group">
+        <label class="setting-label">ニュースカテゴリ</label>
+        <div class="feed-toggle" role="group">
+          <button class="feed-btn active" id="feedDomestic" data-feed="domestic">🗾 国内</button>
+          <button class="feed-btn" id="feedEconomy" data-feed="economy">💹 経済</button>
+          <button class="feed-btn" id="feedEntertainment" data-feed="entertainment">🎮 エンタメ</button>
+          <button class="feed-btn" id="feedWorld" data-feed="world">🌍 世界</button>
+          <button class="feed-btn" id="feedHardware" data-feed="hardware">💻 ハードウェア</button>
+          <button class="feed-btn" id="feedSoftware" data-feed="software">💾 ソフトウェア</button>
+          <button class="feed-btn" id="feedOverseasBiz" data-feed="overseas_biz">💼 海外技術ビジネス</button>
+          <button class="feed-btn" id="feedOverseasCulture" data-feed="overseas_culture">🍿 海外ITカルチャー</button>
+          <button class="feed-btn" id="feedOverseasTech" data-feed="overseas_tech">🔬 海外技術</button>
+        </div>
+      </div>
+
+      <!-- 記事数 -->
+      <div class="setting-group">
+        <label class="setting-label" for="articleCount">
+          記事数 <span class="badge" id="articleCountBadge">5</span>
+        </label>
+        <input type="range" id="articleCount" class="slider" min="3" max="8" value="5" />
+        <div class="slider-labels"><span>3</span><span>8</span></div>
+      </div>
+
+      <!-- 分析モード -->
+      <div class="setting-group">
+        <label class="setting-label">分析モード</label>
+        <div class="radio-group" style="display: flex; gap: 8px; margin-top: 8px;">
+          <label style="flex: 1; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; cursor: pointer;">
+            <input type="radio" name="analysisMode" value="summary_only" />
+            <span>要約のみ (高速)</span>
+          </label>
+          <label style="flex: 1; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; cursor: pointer;">
+            <input type="radio" name="analysisMode" value="full" checked />
+            <span>要約＋考察</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- API状態 -->
+      <div class="setting-group">
+        <label class="setting-label">Gemini API 状態</label>
+        <div class="api-status-box" id="apiStatusBox">
+          <div class="api-status-row">
+            <span class="api-status-dot" id="apiStatusDot"></span>
+            <span class="api-status-text" id="apiStatusText">確認中...</span>
+          </div>
+          <div class="api-model-row" id="apiModelRow" hidden>
+            <span class="api-model-label">モデル</span>
+            <span class="api-model-value" id="apiModelValue">—</span>
+          </div>
+        </div>
+        <p class="hint">APIキーは <code>.env</code> で管理</p>
+      </div>
+
+      <!-- 実行ボタン -->
+      <button class="analyze-btn" id="analyzeBtn">
+        <span class="btn-spark" aria-hidden="true">✨</span>
+        分析開始
+      </button>
+
+      <!-- 進捗 -->
+      <div class="progress-wrap" id="progressWrap" hidden>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-text" id="progressText">準備中...</p>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- スケジュール -->
+      <div class="schedule-box">
+        <div class="schedule-title">🕐 自動取得スケジュール</div>
+        <div class="schedule-times">
+          <span class="schedule-chip">朝 7:00</span>
+          <span class="schedule-chip">夕 18:00</span>
+        </div>
+        <div class="schedule-next" id="scheduleNext">次回: 読み込み中...</div>
+        <button class="run-now-btn" id="runNowBtn">⚡ 今すぐ取得</button>
+        <p class="hint" style="margin-top:6px">※ .env の API キーを使用</p>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="info-box">
+        <p class="info-title">📌 使い方</p>
+        <ol class="info-list">
+          <li>カテゴリと記事数を選択</li>
+          <li>「分析開始」を押す</li>
+          <li>①各記事の要約→②全記事討論が自動表示</li>
+          <li>🔊ボタンでラジオ音声再生</li>
+        </ol>
+      </div>
+    </aside>
+
+    <!-- ── メインコンテンツ ── -->
+    <main class="content" id="content" role="main">
+
+      <!-- 空状態 -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon" aria-hidden="true">🔮</div>
+        <h1 class="empty-title">AIニュース分析ダッシュボード</h1>
+        <p class="empty-desc">
+          Yahoo!ニュースをGemini AIが分析します。<br />
+          ① 各記事の要約・考察 → ② 全記事まとめ討論ラジオ
+        </p>
+        <div class="feature-chips">
+          <span class="chip">📰 記事要約</span>
+          <span class="chip">🔍 考察・推論</span>
+          <span class="chip">🎙️ 討論ラジオ</span>
+          <span class="chip">🔊 音声読み上げ</span>
+          <span class="chip">🕐 自動スケジュール</span>
+        </div>
+        <div class="cache-preview" id="cachePreview" hidden>
+          <div class="cache-header">
+            <span class="cache-label-badge" id="cacheLabelBadge">自動取得</span>
+            <span class="cache-time" id="cacheTime"></span>
+          </div>
+          <button class="load-cache-btn" id="loadCacheBtn">
+            📂 最新の自動取得結果を表示する
+          </button>
+        </div>
+      </div>
+
+      <!-- ローディング -->
+      <div class="loading-state" id="loadingState" hidden>
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <p class="loading-text" id="loadingText">初期化中...</p>
+      </div>
+
+      <!-- 結果コンテナ -->
+      <div id="resultsContainer" hidden></div>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
