@@ -1151,7 +1151,7 @@ body {
 
   /* メインコンテンツ */
   .content { padding: 16px 12px; }
-  .layout  { padding-top: var(--header-h); }
+  .layout  { padding-top: var(--header-h); display: block; }
 
   /* カードグリッドを1列に */
   .results-grid { grid-template-columns: 1fr; }
